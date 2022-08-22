@@ -68,6 +68,8 @@ module "restricted_shared_vpc" {
   private_service_cidr             = var.restricted_private_service_cidr
   org_id                           = var.org_id
   parent_folder                    = var.parent_folder
+  ingress_policies                 = var.ingress_policies
+  egress_policies                  = var.egress_policies
   bgp_asn_subnet                   = local.bgp_asn_number
   default_region1                  = var.default_region1
   default_region2                  = var.default_region2
