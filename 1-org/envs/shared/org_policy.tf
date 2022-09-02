@@ -103,6 +103,40 @@ module "org_shared_require_os_login" {
   constraint      = "constraints/compute.requireOsLogin"
 }
 
+module "restrict_protocol_fowarding" {
+  source            = "terraform-google-modules/org-policy/google"
+  version           = "~> 5.1"
+  organization_id   = local.organization_id
+  folder_id         = local.folder_id
+  policy_for        = local.policy_for
+  policy_type       = "list"
+  allow             = ["INTERNAL"]
+  allow_list_length = 1
+  constraint        = "constraints/compute.restrictProtocolForwardingCreationForTypes"
+}
+
+module "disable_vpc_external_ipv6" {
+  source          = "terraform-google-modules/org-policy/google"
+  version         = "~> 5.1"
+  organization_id = local.organization_id
+  folder_id       = local.folder_id
+  policy_for      = local.policy_for
+  policy_type     = "boolean"
+  enforce         = "true"
+  constraint      = "constraints/compute.disableVpcExternalIpv6"
+}
+
+module "internal_dns_on_new_project_to_zonal_dns_only" {
+  source          = "terraform-google-modules/org-policy/google"
+  version         = "~> 5.1"
+  organization_id = local.organization_id
+  folder_id       = local.folder_id
+  policy_for      = local.policy_for
+  policy_type     = "boolean"
+  enforce         = "true"
+  constraint      = "constraints/compute.setNewProjectDefaultToZonalDNSOnly"
+}
+
 /******************************************
   Cloud SQL
 *******************************************/
@@ -153,6 +187,17 @@ module "org_disable_automatic_iam_grants_on_default_service_accounts" {
   constraint      = "constraints/iam.automaticIamGrantsForDefaultServiceAccounts"
 }
 
+module "disable_service_account_key_upload" {
+  source          = "terraform-google-modules/org-policy/google"
+  version         = "~> 5.1"
+  organization_id = local.organization_id
+  folder_id       = local.folder_id
+  policy_for      = local.policy_for
+  policy_type     = "boolean"
+  enforce         = "true"
+  constraint      = "constraints/iam.disableServiceAccountKeyUpload"
+}
+
 /******************************************
   Storage
 *******************************************/
@@ -166,6 +211,22 @@ module "org_enforce_bucket_level_access" {
   policy_type     = "boolean"
   enforce         = "true"
   constraint      = "constraints/storage.uniformBucketLevelAccess"
+}
+
+/******************************************
+  Essential Contacts
+*******************************************/
+
+module "domain_restricted_contacts" {
+  source            = "terraform-google-modules/org-policy/google"
+  version           = "~> 5.1"
+  organization_id   = local.organization_id
+  folder_id         = local.folder_id
+  policy_for        = local.policy_for
+  policy_type       = "list"
+  allow_list_length = length(var.essential_contacts_domains_to_allow)
+  allow             = var.essential_contacts_domains_to_allow
+  constraint        = "constraints/essentialcontacts.allowedContactDomains"
 }
 
 /******************************************

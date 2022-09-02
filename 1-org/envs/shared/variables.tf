@@ -44,7 +44,7 @@ variable "domains_to_allow" {
 variable "enable_os_login_policy" {
   description = "Enable OS Login Organization Policy."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "audit_logs_table_expiration_days" {
@@ -322,4 +322,9 @@ variable "essential_contacts_language" {
   description = "Essential Contacts preferred language for notifications, as a ISO 639-1 language code. See [Supported languages](https://cloud.google.com/resource-manager/docs/managing-notification-contacts#supported-languages) for a list of supported languages."
   type        = string
   default     = "en"
+}
+
+variable "essential_contacts_domains_to_allow" {
+  description = "The list of domains that email addresses added to Essential Contacts can have."
+  type        = list(string)
 }
