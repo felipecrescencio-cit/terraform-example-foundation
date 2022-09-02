@@ -43,25 +43,22 @@ module "logs_export" {
   logging_destination_project_id = module.org_audit_logs.project_id
 
   /******************************************
-  Send logs to BigQuery
-*****************************************/
+    Send logs to BigQuery
+  *****************************************/
   bigquery_options = {
     logging_sink_name          = "sk-c-logging-bq"
     logging_sink_filter        = local.main_logs_filter
     dataset_name               = "audit_logs"
-    partitioned_tables         = "true"
-    include_children           = true
     expiration_days            = var.audit_logs_table_expiration_days
     delete_contents_on_destroy = var.audit_logs_table_delete_contents_on_destroy
   }
 
   /******************************************
-  Send logs to Storage
-*****************************************/
+    Send logs to Storage
+  *****************************************/
   storage_options = {
     logging_sink_filter          = local.all_logs_filter
     logging_sink_name            = "sk-c-logging-bkt"
-    include_children             = true
     storage_bucket_name          = "bkt-${module.org_audit_logs.project_id}-org-logs-${random_string.suffix.result}"
     location                     = var.log_export_storage_location
     retention_policy_is_locked   = var.log_export_storage_retention_policy == null ? null : var.log_export_storage_retention_policy.is_locked
@@ -70,27 +67,24 @@ module "logs_export" {
     versioning                   = var.log_export_storage_versioning
   }
 
-
   /******************************************
-  Send logs to Pub\Sub
-*****************************************/
+    Send logs to Pub\Sub
+  *****************************************/
   pubsub_options = {
     logging_sink_filter = local.main_logs_filter
     logging_sink_name   = "sk-c-logging-pub"
-    include_children    = true
     topic_name          = "tp-org-logs-${random_string.suffix.result}"
     create_subscriber   = true
   }
 
   /******************************************
-  Send logs to Logbucket
-*****************************************/
+    Send logs to Logbucket
+  *****************************************/
   logbucket_options = {
     logging_sink_name   = "sk-c-logging-logbkt"
     logging_sink_filter = local.all_logs_filter
-    include_children    = true
     name                = "logbkt-org-logs-${random_string.suffix.result}"
-    location            = var.default_region
+    location            = local.default_region
   }
 }
 
