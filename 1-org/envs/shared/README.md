@@ -20,6 +20,7 @@
 | enable\_hub\_and\_spoke | Enable Hub-and-Spoke architecture. | `bool` | `false` | no |
 | enable\_os\_login\_policy | Enable OS Login Organization Policy. | `bool` | `true` | no |
 | essential\_contacts\_domains\_to\_allow | The list of domains that email addresses added to Essential Contacts can have. | `list(string)` | n/a | yes |
+| enable\_os\_login\_policy | Enable OS Login Organization Policy. | `bool` | `false` | no |
 | essential\_contacts\_language | Essential Contacts preferred language for notifications, as a ISO 639-1 language code. See [Supported languages](https://cloud.google.com/resource-manager/docs/managing-notification-contacts#supported-languages) for a list of supported languages. | `string` | `"en"` | no |
 | gcp\_audit\_viewer | Google Workspace or Cloud Identity group that members are part of an audit team and view audit logs in the logging project. | `string` | `null` | no |
 | gcp\_billing\_admin\_user | Identity that has billing administrator permissions. | `string` | `null` | no |
