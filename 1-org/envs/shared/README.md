@@ -20,7 +20,6 @@
 | enable\_hub\_and\_spoke | Enable Hub-and-Spoke architecture. | `bool` | `false` | no |
 | enable\_os\_login\_policy | Enable OS Login Organization Policy. | `bool` | `true` | no |
 | essential\_contacts\_domains\_to\_allow | The list of domains that email addresses added to Essential Contacts can have. | `list(string)` | n/a | yes |
-| enable\_os\_login\_policy | Enable OS Login Organization Policy. | `bool` | `false` | no |
 | essential\_contacts\_language | Essential Contacts preferred language for notifications, as a ISO 639-1 language code. See [Supported languages](https://cloud.google.com/resource-manager/docs/managing-notification-contacts#supported-languages) for a list of supported languages. | `string` | `"en"` | no |
 | gcp\_audit\_viewer | Google Workspace or Cloud Identity group that members are part of an audit team and view audit logs in the logging project. | `string` | `null` | no |
 | gcp\_billing\_admin\_user | Identity that has billing administrator permissions. | `string` | `null` | no |
@@ -67,6 +66,7 @@
 | dns\_hub\_project\_id | The DNS hub project ID |
 | domains\_to\_allow | The list of domains to allow users from in IAM. |
 | interconnect\_project\_id | The Dedicated Interconnect project ID |
+| logs\_export\_bigquery\_dataset\_name | The log bucket for destination of log exports. See https://cloud.google.com/logging/docs/routing/overview#buckets |
 | logs\_export\_logbucket\_name | The log bucket for destination of log exports. See https://cloud.google.com/logging/docs/routing/overview#buckets |
 | logs\_export\_pubsub\_topic | The Pub/Sub topic for destination of log exports |
 | logs\_export\_storage\_bucket\_name | The storage bucket for destination of log exports |
