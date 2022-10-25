@@ -19,7 +19,10 @@ module "restricted_shared_vpc_project" {
 
   org_id                     = local.org_id
   billing_account            = local.billing_account
-  folder_id                  = local.env_folder_name
+
+  # folder_id                  = local.env_folder_name
+  folder_id       = var.parent_folder_key == "" ? local.env_folder_name : local.env_folder_hierarchy_map[var.parent_folder_key]
+
   environment                = var.env
   vpc_type                   = "restricted"
   shared_vpc_host_project_id = local.restricted_host_project_id

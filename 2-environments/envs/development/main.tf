@@ -22,3 +22,14 @@ module "env" {
   monitoring_workspace_users = var.monitoring_workspace_users
   remote_state_bucket        = var.remote_state_bucket
 }
+
+# New folders under development folder
+resource "google_folder" "env_bu1" {
+  display_name = "bu1a"
+  parent       = module.env.env_folder
+}
+
+resource "google_folder" "env_bu2" {
+  display_name = "bu2a"
+  parent       = module.env.env_folder
+}
