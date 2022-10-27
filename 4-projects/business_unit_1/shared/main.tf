@@ -19,7 +19,10 @@ locals {
   parent_folder                  = data.terraform_remote_state.bootstrap.outputs.common_config.parent_folder
   parent                         = data.terraform_remote_state.bootstrap.outputs.common_config.parent_id
   billing_account                = data.terraform_remote_state.bootstrap.outputs.common_config.billing_account
-  common_folder_name             = data.terraform_remote_state.org.outputs.common_folder_name
+
+  # common_folder_name             = data.terraform_remote_state.org.outputs.common_folder_name
+  common_folder_name = data.terraform_remote_state.environments_env.outputs.env_parent_folder
+
   default_region                 = data.terraform_remote_state.bootstrap.outputs.common_config.default_region
   project_prefix                 = data.terraform_remote_state.bootstrap.outputs.common_config.project_prefix
   folder_prefix                  = data.terraform_remote_state.bootstrap.outputs.common_config.folder_prefix
@@ -43,5 +46,16 @@ data "terraform_remote_state" "org" {
   config = {
     bucket = var.remote_state_bucket
     prefix = "terraform/org/state"
+  }
+}
+
+data "terraform_remote_state" "environments_env" {
+  backend = "gcs"
+
+  config = {
+    bucket = var.remote_state_bucket
+    # prefix = "terraform/environments/${var.env}"
+    # prefix = "terraform/environments/${var.env_state_folder}/${var.env}"
+    prefix = "terraform/environments/finance/dev"
   }
 }

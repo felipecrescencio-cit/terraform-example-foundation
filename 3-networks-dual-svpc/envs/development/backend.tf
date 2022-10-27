@@ -17,6 +17,7 @@
 terraform {
   backend "gcs" {
     bucket = "UPDATE_ME"
-    prefix = "terraform/networks/development"
+    # prefix = "terraform/networks/development"
+    prefix = "terraform/networks/finance/dev"
   }
 }

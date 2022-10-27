@@ -74,7 +74,8 @@ data "terraform_remote_state" "environments_env" {
 
   config = {
     bucket = var.remote_state_bucket
-    prefix = "terraform/environments/${var.env}"
+    # prefix = "terraform/environments/${var.env}"
+    prefix = var.env_state_folder == "" ? "terraform/environments/${var.env}" : "terraform/environments/${var.env_state_folder}/${var.env}"
   }
 }
 

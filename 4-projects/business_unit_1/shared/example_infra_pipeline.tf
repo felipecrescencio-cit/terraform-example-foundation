@@ -16,13 +16,13 @@
 
 locals {
   sa_roles = {
-    "bu1-example-app" = [
+    "finance-dev-app" = [
       "roles/compute.instanceAdmin.v1",
       "roles/iam.serviceAccountAdmin",
       "roles/iam.serviceAccountUser",
     ]
   }
-  repo_names = ["bu1-example-app"]
+  repo_names = ["finance-dev-app"]
 }
 
 module "app_infra_cloudbuild_project" {
@@ -49,7 +49,7 @@ module "app_infra_cloudbuild_project" {
   billing_code      = "1234"
   primary_contact   = "example@example.com"
   secondary_contact = "example2@example.com"
-  business_code     = "bu1"
+  business_code     = "fdv"
 }
 
 module "infra_pipelines" {

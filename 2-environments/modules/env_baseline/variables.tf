@@ -57,3 +57,8 @@ variable "project_budget" {
   })
   default = {}
 }
+
+variable "new_parent_folder" {
+  type    = string
+  default = ""
+}

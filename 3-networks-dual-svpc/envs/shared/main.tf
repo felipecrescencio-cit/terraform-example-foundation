@@ -24,11 +24,14 @@ locals {
   dns_hub_project_id         = data.terraform_remote_state.org.outputs.dns_hub_project_id
   interconnect_project_id    = data.terraform_remote_state.org.outputs.interconnect_project_id
   parent_id                  = data.terraform_remote_state.bootstrap.outputs.common_config.parent_id
+
   bootstrap_folder_name      = data.terraform_remote_state.bootstrap.outputs.common_config.bootstrap_folder_name
   common_folder_name         = data.terraform_remote_state.org.outputs.common_folder_name
   development_folder_name    = data.terraform_remote_state.env_development.outputs.env_folder
   non_production_folder_name = data.terraform_remote_state.env_non_production.outputs.env_folder
   production_folder_name     = data.terraform_remote_state.env_production.outputs.env_folder
+
+  finance_dev_folder_name    = data.terraform_remote_state.finance_env_dev.outputs.env_folder
 }
 
 data "terraform_remote_state" "bootstrap" {
@@ -46,6 +49,15 @@ data "terraform_remote_state" "org" {
   config = {
     bucket = var.remote_state_bucket
     prefix = "terraform/org/state"
+  }
+}
+
+data "terraform_remote_state" "finance_env_dev" {
+  backend = "gcs"
+
+  config = {
+    bucket = var.remote_state_bucket
+    prefix = "terraform/environments/finance/dev"
   }
 }
 

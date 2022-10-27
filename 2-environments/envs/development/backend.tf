@@ -17,6 +17,7 @@
 terraform {
   backend "gcs" {
     bucket = "UPDATE_ME"
-    prefix = "terraform/environments/development"
+    # prefix = "terraform/environments/development"
+    prefix = "terraform/environments/${parent_folder_name}/${env_name}"
   }
 }

@@ -15,7 +15,8 @@
  */
 
 locals {
-  env              = "development"
+  # env              = "development"
+  env              = "dev"
   environment_code = substr(local.env, 0, 1)
   default_region1  = "us-west1"
   default_region2  = "us-central1"
@@ -62,7 +63,7 @@ locals {
 }
 
 module "base_env" {
-  source = "../../modules/base_env"
+  source = "../../../modules/base_env"
 
   env                                = local.env
   environment_code                   = local.environment_code
@@ -82,4 +83,5 @@ module "base_env" {
   restricted_subnet_secondary_ranges = local.restricted_subnet_secondary_ranges
   remote_state_bucket                = var.remote_state_bucket
 
+  env_state_folder = "finance"
 }

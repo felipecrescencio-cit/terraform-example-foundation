@@ -15,15 +15,20 @@
  */
 
 module "hierarchical_firewall_policy" {
+  # If you add more folders in source structure make sure to check modules sources
   source = "../../modules/hierarchical_firewall_policy/"
+
   parent = local.common_folder_name
   name   = "common-firewall-rules"
   associations = [
     local.common_folder_name,
-    local.bootstrap_folder_name,
-    local.development_folder_name,
-    local.production_folder_name,
-    local.non_production_folder_name,
+
+    local.finance_dev_folder_name,
+
+    # local.bootstrap_folder_name,
+    # local.development_folder_name,
+    # local.production_folder_name,
+    # local.non_production_folder_name,
   ]
   rules = {
     delegate-rfc1918-ingress = {

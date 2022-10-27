@@ -43,3 +43,16 @@ output "env_secrets_project_id" {
   description = "Project for environment related secrets."
   value       = module.env.env_secrets_project_id
 }
+
+output "env_parent_folder" {
+  description = "Environment folder created under parent."
+  value       = google_folder.finance.name
+}
+
+# Make to output your new hierarchy for the following steps
+output "folder_hierarchy" {
+  value = {
+    "finance"     = google_folder.finance.name
+    "finance/dev" = module.env.env_folder
+  }
+}
