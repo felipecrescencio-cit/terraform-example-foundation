@@ -46,7 +46,8 @@ output "env_secrets_project_id" {
 
 output "folder_hierarchy" {
   value = {
-    "bu1" = google_folder.env_bu1.name
-    "bu2" = google_folder.env_bu2.name
+    "development"     = module.env.env_folder.name
+    "development/bu1" = google_folder.env_bu1.name
+    "development/bu2" = google_folder.env_bu2.name
   }
 }
