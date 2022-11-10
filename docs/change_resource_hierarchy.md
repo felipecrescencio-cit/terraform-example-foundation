@@ -175,13 +175,13 @@ example-organization/
 ├── bootstrap
 ├── common
 └── development
-    └── finance
+    ├── finance
     └── retail
 └── non-production
-    └── finance
+    ├── finance
     └── retail
 └── production
-    └── finance
+    ├── finance
     └── retail
 ```
 
