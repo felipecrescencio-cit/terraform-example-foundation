@@ -78,7 +78,7 @@ Review tf-wrapper.sh.
     environments_regex="^(development|non-production|production|shared)$"
 
     # Create maxdepth variable
-    maxdepth=2
+    maxdepth=2  #<- Must be configured base in your directory design
 
     ## Terraform apply for single environment.
     tf_apply() {
@@ -142,3 +142,134 @@ Review tf-wrapper.sh.
     | development | folders/0000000 |
     | development/finance | folders/11111111 |
     | development/retail | folders/2222222 |
+
+    *Table 2 - Example output for resource hierarchy with more levels*
+
+    | Folder Path | Folder Id |
+    | --- | --- |
+    | development | folders/0000000 |
+    | development/us | folders/11111111 |
+    | development/us/finance | folders/2222222 |
+    | development/us/retail | folders/3333333 |
+    | development/europe | folders/4444444 |
+    | development/europe/finance | folders/5555555 |
+    | development/europe/retail | folders/7777777 |
+
+    Example:
+
+    2-environments/envs/development/outputs.tf
+
+    ```hcl
+    ...
+    /* Folder hierarchy output */
+    output "folder_hierarchy" {
+        value = {
+        "development" = module.env.env_folder
+        "development/finance" = google_folder.finance.name
+        "development/retail" = google_folder.retail.name
+        }
+    }
+    ```
+
+### Step 4-projects
+
+1. Change the base_env module to receive the new folder key (e.g. development/retail) in hierarchy map from step 2-environments.
+1. This folder key should be used to get the folder where projects should be created.
+    Example:
+
+    4-projects/modules/base_env/variables.tf
+
+    ```hcl
+    ...
+    variable "folder_hierarchy_key" {
+        description = "Key of the folder hierarchy map to get the folder where projects should be created."
+        type = string
+        default = ""
+    }
+    ...
+    ```
+
+    4-projects/modules/base_env/main.tf
+
+    ```hcl
+    locals {
+        ...
+        env_folder_name = lookup(
+        data.terraform_remote_state.environments_env.outputs.folder_hierarchy, var.folder_hierarchy_key
+        , data.terraform_remote_state.environments_env.outputs.env_folder)
+        ...
+    }
+    ...
+    ```
+
+1. Create your folder hierarchy above environment folders (development, non-production, production). Remember to keep the environment folders as leaf in source code folder hierarchy because this is the way tf-wrapper.sh - that is the bash script helper - works to apply terraform configurations.
+1. For this example, just rename folder business_unit_1 and business_unit_2 to your Business Units names, i.e: finance and retail, to match example folder hierarchy.
+1. Manually duplicate your source folder hierarchy to match your needs.
+1. Change backend gcs prefix for each business unit shared resources.
+    Example:
+
+    4-projects/finance/shared/backend.tf
+
+    ```hcl
+    ...
+    terraform {
+        backend "gcs" {
+            bucket = "<YOUR_PROJECTS_BACKEND_STATE_BUCKET>"
+            prefix = "terraform/projects/finance/shared"
+        }
+    }
+    ```
+
+1. Review locals and business code in Cloud Build project pipelines.
+    Example:
+
+    4-projects/finance/shared/example_infra_pipeline.tf
+
+    ```hcl
+    locals {
+        repo_names = ["finance-app"]
+    }
+    ...
+
+    module "app_infra_cloudbuild_project" {
+        source = "../../modules/single_project"
+        ...
+        primary_contact   = "example@example.com"
+        secondary_contact = "example2@example.com"
+        business_code     = "fin"
+    }
+    ```
+
+1. Change backend gcs prefix for each business unit.
+    Example:
+
+    4-projects/finance/development/backend.tf
+
+    ```hcl
+    ...
+    terraform {
+        backend "gcs" {
+            bucket = "<YOUR_PROJECTS_BACKEND_STATE_BUCKET>"
+            prefix = "terraform/projects/finance/development"
+        }
+    }
+    ```
+
+1. Review business_code and business_unit to match your new business units names.
+1. Set new folder_hierarchy_key parameter on base_env calls.
+
+    Example:
+
+    4-projects/finance/development/main.tf
+
+    ```hcl
+    module "env" {
+        source = "../../modules/base_env"
+
+        env                  = "development"
+        business_code        = "fin"
+        business_unit        = "finance"
+        folder_hierarchy_key = "development/finance"
+        ...
+    }
+    ```
