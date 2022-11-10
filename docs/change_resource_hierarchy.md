@@ -85,11 +85,95 @@ Review tf-wrapper.sh.
     ...
     ```
 
-1. Change find commands to use maxdepth variable on all terraform commands. Make sure you do the same changes in functions:
+1. Change find commands to use maxdepth variable on all terraform commands. Make sure you do the same changes in functions: tf_plan_validate_all and single_action_runner.
+
+    ```bash
+    tf_plan_validate_all() {
+    local env
+    ...
+    # Set maxdepth in find command
+    find "$component_path" -mindepth 1 -maxdepth $maxdepth -type d | while read -r env_path ; do
+        env="$(basename "$env_path")"
+    ```
+
+1. Add validation to check your new folder hierarchy and find terraform config files.
+
+    ```bash
+     if [[ "$env" =~ $environments_regex ]] ; then
+       local component_tf_arg
+       # Additional validation to get source folder hierarchy and find terraform configs
+       if [[ "$env_path" =~ ^($base_dir)/($component)/(.+)/$env ]] ; then
+    ```
+
+1. Set a new component name to be used as terraform plan json filenames and set it as terraform commands parameters.
+
+    ```bash
+           # Set a new component name to be used as terraform plan json file names
+           component_tf_arg=$(echo ${BASH_REMATCH[3]} | sed -r 's/\//__/g')
+       else
+           component_tf_arg=$component
+       fi
+ 
+       # Set new component name as terraform commands parameters
+       tf_init "$env_path" "$env" "$component_tf_arg"
+       tf_plan "$env_path" "$env" "$component_tf_arg"
+       tf_validate "$env_path" "$env" "$policysource" "$component_tf_arg"
+    ```
+
+1. Do the same changes in single_action_runner function.
+
+    ```bash
+    single_action_runner() {
+    local env
+    ...
+    # Set maxdepth in find command
+    find "$component_path" -mindepth 1 -maxdepth $maxdepth -type d | sort -r | while read -r env_path ; do
+        env="$(basename "$env_path")"
+        local component_tf_arg
+
+        # Additional validation to get source folder hierarchy and find terraform configs
+        if [[ "$env_path" =~ ^($base_dir)/($component)/(.+)/$env ]] ; then
+
+            # Set a new component name to be used as terraform plan json file names
+            component_tf_arg=$(echo ${BASH_REMATCH[3]} | sed -r 's/\//__/g')
+        else
+            component_tf_arg=$component
+        fi
+        ...
+        case "$action" in
+            apply )
+            # Set new component name as terraform commands parameters
+            tf_apply "$env_path" "$env" "$component_tf_arg"
+            ;;
+
+            init )
+            # Set new component name as terraform commands parameters
+            tf_init "$env_path" "$env" "$component_tf_arg"
+            ;;
+
+            plan )
+            # Set new component name as terraform commands parameters
+            tf_plan "$env_path" "$env" "$component_tf_arg"
+            ;;
+
+            show )
+            # Set new component name as terraform commands parameters
+            tf_show "$env_path" "$env" "$component_tf_arg"
+            ;;
+
+            validate )
+            # Set new component name as terraform commands parameters
+            tf_validate "$env_path" "$env" "$policysource" "$component_tf_arg"
+            ;;
+    ...
+    ```
 
 ## Code Changes - Hierarchy creation - Environments as Root
 
 ```text
+example-organization/
+├── bootstrap
+├── common
 └── development
     └── finance
     └── retail
