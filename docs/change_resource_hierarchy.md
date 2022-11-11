@@ -37,12 +37,12 @@ example-organization/<br>
 example-organization/<br>
 ├── fldr-bootstrap<br>
 ├── fldr-common<br>
-└── <b>fldr-development</b><br>
-&nbsp;&nbsp;&nbsp;&nbsp;├── finance<br>
-&nbsp;&nbsp;&nbsp;&nbsp;└── retail<br>
-└── <b>fldr-non-production</b><br>
-&nbsp;&nbsp;&nbsp;&nbsp;├── finance<br>
-&nbsp;&nbsp;&nbsp;&nbsp;└── retail<br>
+├── <b>fldr-development</b><br>
+│&nbsp;&nbsp;&nbsp;├── finance<br>
+│&nbsp;&nbsp;&nbsp;└── retail<br>
+├── <b>fldr-non-production</b><br>
+│&nbsp;&nbsp;&nbsp;├── finance<br>
+│&nbsp;&nbsp;&nbsp;└── retail<br>
 └── <b>fldr-production</b><br>
 &nbsp;&nbsp;&nbsp;&nbsp;├── finance<br>
 &nbsp;&nbsp;&nbsp;&nbsp;└── retail<br>
@@ -51,10 +51,10 @@ example-organization/<br>
 example-organization/<br>
 ├── fldr-bootstrap<br>
 ├── fldr-common<br>
-└── finance</b><br>
-&nbsp;&nbsp;&nbsp;&nbsp;├── <b>fldr-development</b><br>
-&nbsp;&nbsp;&nbsp;&nbsp;├── <b>fldr-non-production</b><br>
-&nbsp;&nbsp;&nbsp;&nbsp;└── <b>fldr-production</b><br>
+├── finance</b><br>
+│&nbsp;&nbsp;&nbsp;├── <b>fldr-development</b><br>
+│&nbsp;&nbsp;&nbsp;├── <b>fldr-non-production</b><br>
+│&nbsp;&nbsp;&nbsp;└── <b>fldr-production</b><br>
 └── retail</b><br>
 &nbsp;&nbsp;&nbsp;&nbsp;├── <b>fldr-development</b><br>
 &nbsp;&nbsp;&nbsp;&nbsp;├── <b>fldr-non-production</b><br>
@@ -113,7 +113,7 @@ Review tf-wrapper.sh.
        else
            component_tf_arg=$component
        fi
- 
+
        # Set new component name as terraform commands parameters
        tf_init "$env_path" "$env" "$component_tf_arg"
        tf_plan "$env_path" "$env" "$component_tf_arg"
@@ -174,12 +174,12 @@ Review tf-wrapper.sh.
 example-organization/
 ├── bootstrap
 ├── common
-└── development
-    ├── finance
-    └── retail
-└── non-production
-    ├── finance
-    └── retail
+├── development
+│   ├── finance
+│   └── retail
+├── non-production
+│   ├── finance
+│   └── retail
 └── production
     ├── finance
     └── retail
@@ -354,6 +354,464 @@ example-organization/
         business_code        = "fin"
         business_unit        = "finance"
         folder_hierarchy_key = "development/finance"
+        ...
+    }
+    ```
+
+## Code Changes - Hierarchy creation - Environments as Leafs
+
+```text
+example-organization/
+├── bootstrap
+├── common
+├── finance
+│   ├── development
+│   ├── non-production
+│   └── production
+└── retail
+    ├── development
+    ├── non-production
+    └── production
+```
+
+### Step 1-org
+
+1. Create the folder hierarchy for the business units in the same level as bootstrap and common folders.
+1. Create a new file with your folder hierarchy.
+
+    Example:
+
+    1-org/envs/shared/folder_hierarchy.tf
+
+    ```hcl
+    resource "google_folder" "finance" {
+    display_name = "finance"
+    parent       = local.parent
+    }
+
+    resource "google_folder" "retail" {
+    display_name = "retail"
+    parent       = local.parent
+    }
+    ```
+
+1. Create an output with the flat presentation of the new hierarchy. It will be used in the next steps to host GCP projects.
+1. In this scenario - environments as leaf - you should create the folder hierarchy before the environment folders creation that will happen in step 2. This is a big difference from scenario Environments as root where you create your business units folders hierarchy inside environment folders.
+
+    *Table 3 - Example output for Figure 2 resource hierarchy*
+
+    | Folder Path | Folder Id |
+    | --- | --- |
+    | finance | folders/11111111 |
+    | retail | folders/2222222 |
+
+    *Table 4 - Example output for resource hierarchy with more levels*
+    | Folder Path | Folder Id |
+    | --- | --- |
+    | us | folders/0000000 |
+    | us/finance | folders/11111111 |
+    | us/retail | folders/2222222 |
+    | europe | folders/3333333 |
+    | europe/finance | folders/4444444 |
+    | europe/retail | folders/5555555 |
+
+    Example:
+
+    1-org/envs/shared/outputs.tf
+
+    ```hcl
+    output "folder_hierarchy" {
+        value = {
+        "finance" = google_folder.finance.name
+        "retail"  = google_folder.retail.name
+        }
+    }
+    ```
+
+### Step 2-environments
+
+1. Create the environment folders for each business unit.
+1. Under folder envs create your business unit folders.
+1. Move environment folders (development, non-production, production) inside your business unit folders.
+1. Duplicate environment folders inside business unit folders as many business units as needed.
+
+    Example - Source folders structure considering Figure 2 example:
+
+    ```text
+    gcp-environment/
+    ├── envs
+    │   ├── finance
+    │   │   ├── development
+    │   │   ├── non-production
+    │   │   └── production
+    │   └── retail
+    │       ├── development
+    │       ├── non-production
+    │       └── production
+    └── modules
+    ```
+
+1. Change the base_env module to receive the new folder key (e.g. retail) in the hierarchy map from step 1-org.
+1. This folder key should be used to get the parent folder where environment projects should be created.
+
+    Example:
+
+    2-environments/modules/base_env/variables.tf
+
+    ```hcl
+    ...
+    variable "folder_hierarchy_key" {
+        description = "Key of the folder hierarchy map to get the folder where projects should be created."
+        type = string
+        default = ""
+    }
+    ...
+    ```
+
+    2-environments/modules/base_env/main.tf
+
+    ```hcl
+    locals {
+        ...
+        parent = lookup(data.terraform_remote_state.org.outputs.folder_hierarchy, var.folder_hierarchy_key,
+        data.terraform_remote_state.bootstrap.outputs.common_config.parent_id)
+        ...
+    }
+    ```
+
+1. You need to manually change backend gcs prefix for each business unit/environment resources.
+
+    Example:
+
+    2-environments/envs/retail/development/backend.tf
+
+    ```hcl
+    ...
+    terraform {
+        backend "gcs" {
+            bucket = "<YOUR_BACKEND_STATE_BUCKET>"
+            prefix = "terraform/environments/retail/development"
+        }
+    }
+    ...
+    ```
+
+1. Set new folder_hierarchy_key parameter on base_env calls.
+
+    Example:
+
+    2-environments/envs/retail/development/main.tf
+
+    ```hcl
+    module "env" {
+        source = "../../../modules/env_baseline"
+
+        env                  = "development"
+        environment_code     = "d"
+        folder_hierarchy_key = "retail"
+        ...
+    }
+    ```
+
+### Step 3-networks
+
+1. Keep shared folder in envs/shared path.
+1. Under folder envs create your folder hierarchy. For this example, just create folders finance and retail, to match example folder hierarchy.
+1. Move environment folders (development, non-production, production) inside your folder hierarchy. Remember to keep the environment folders as leafs in source code because this is the way tf-wrapper.sh - that is the bash script helper - works to apply terraform configurations.
+1. Duplicate environment folders inside your folder hierarchy to match your needs.
+
+    Example - Source folders structure considering Figure 2 example:
+
+    ```text
+    gcp-networks/
+    ├── envs
+    │   ├── finance
+    │   │   ├── development
+    │   │   ├── non-production
+    │   │   └── production
+    │   ├── retail
+    │   │   ├── development
+    │   │   ├── non-production
+    │   │   └── production
+    │   └── shared
+    └── modules
+    ```
+
+1. Review shared resources to change environment folder names locals to business unit folder names as the parent folders now are business units instead of environments.
+
+    Example:
+
+    3-networks/envs/shared/main.tf
+
+    ```hcl
+    locals {
+        ...
+        common_folder_name = data.terraform_remote_state.org.outputs.common_folder_name
+
+        # BUs folders instead of environment folders
+        finance_folder_name = data.terraform_remote_state.org.outputs.folder_hierarchy["finance"]
+        retail_folder_name  = data.terraform_remote_state.org.outputs.folder_hierarchy["retail"]
+        ...
+    }
+    ```
+
+1. Fix hierarchical firewall policies to apply in business unit parent folders instead of environment folders. Firewall policies should be  applied to folders under parent (organization or folder).
+
+    Example:
+
+    3-networks/envs/shared/hierarchical_firewall.tf
+
+    ```hcl
+    ...
+    module "hierarchical_firewall_policy" {
+        ...
+        associations = [
+            local.common_folder_name,
+            local.bootstrap_folder_name,
+
+            # BUs folders instead of environment folders
+            local.finance_folder_name,
+            local.retail_folder_name,
+        ]
+        rules = {
+    ...
+    ```
+
+1. Change the base_env module to get terraform remote state folder path (e.g. retail/development).
+1. This folder path should be used to get the terraform state folder that contains data needed to create network resources.
+
+    Example:
+
+    3-networks/modules/base_env/variables.tf
+
+    ```hcl
+    variable "env_state_folder" {
+    description = "Path to remote state"
+    type        = string
+    default     = ""
+    }
+    ```
+
+    Example:
+
+    3-networks/modules/base_env/main.tf
+
+    ```hcl
+    ...
+    data "terraform_remote_state" "environments_env" {
+        backend = "gcs"
+
+        config = {
+        bucket = var.remote_state_bucket
+            # Folder path to terraform remote state
+            prefix = "terraform/environments/${var.env_state_folder}"
+        }
+    }
+    ...
+    ```
+
+1. If you are using Hub and Spoke network mode, review the base and restricted aggregates subnets to match your environments requirements.
+1. Make sure to update them in the base_env module.
+
+    Example:
+
+    3-networks/envs/shared/net-hubs-transitivity.tf
+
+    ```hcl
+    ...
+    locals {
+        enable_transitivity = var.enable_hub_and_spoke_transitivity
+        base_regional_aggregates = {
+            (local.default_region1) = [
+                "10.0.0.0/16",
+                "100.64.0.0/16"
+            ]
+            (local.default_region2) = [
+                "10.1.0.0/16",
+                "100.65.0.0/16"
+            ]
+        }
+        restricted_regional_aggregates = {
+            (local.default_region1) = [
+                "10.8.0.0/16",
+                "100.72.0.0/16"
+            ]
+            (local.default_region2) = [
+                "10.9.0.0/16",
+                "100.73.0.0/16"
+            ]
+        }
+    }
+    ...
+    ```
+
+    3-networks/modules/base_env/main.tf
+
+    ```hcl
+    ...
+    locals {
+        ...
+        /*
+        * Base network ranges
+        */
+        base_subnet_aggregates = ["10.0.0.0/16", "10.1.0.0/16", "100.64.0.0/16", "100.65.0.0/16"]
+        ...
+        /*
+        * Restricted network ranges
+        */
+        restricted_subnet_aggregates = ["10.8.0.0/16", "10.9.0.0/16", "100.72.0.0/16", "100.73.0.0/16"]
+        ...
+    }
+    ```
+
+1. Change backend gcs prefix for each environment in each business unit.
+
+    Example:
+
+    3-networks/retail/development/backend.tf
+
+    ```hcl
+    ...
+    terraform {
+        backend "gcs" {
+        bucket = "<YOUR_BACKEND_STATE_BUCKET>"
+            # Folder path to terraform remote state bucket
+            prefix = "terraform/networks/retail/development"
+        }
+    }
+    ```
+
+1. Review tfvars files symbolic links and modules source paths, as you added more folders in hierarchy it my change those paths.
+1. Set new env_state_folder parameter on base_env calls.
+
+    Example:
+
+    3-networks/retail/development/main.tf
+
+    ```hcl
+    module "base_env" {
+        source = "../../../modules/base_env"
+
+        env              = local.env
+        environment_code = local.environment_code
+        env_state_folder = "retail/development"
+        ...
+    }
+    ```
+
+### Step 4-projects
+
+1. Rename folder business_unit_1 to your Business Unit name, i.e: retail.
+1. Rename folder business_unit_2 to your Business Unit name, i.e: finance.
+1. Duplicate business_unit_X folder to create as many Business Units you need.
+1. Change backend gcs prefix for each business unit shared resources.
+
+    Example:
+
+    4-projects/retail/shared/backend.tf
+
+    ```hcl
+    ...
+    terraform {
+        backend "gcs" {
+            bucket = "<YOUR_PROJECTS_BACKEND_STATE_BUCKET>"
+            prefix = "terraform/projects/retail/shared"
+        }
+    }
+    ```
+
+1. Review locals and business code in Cloud Build project pipelines.
+
+    Example:
+
+    4-projects/retail/shared/example_infra_pipeline.tf
+
+    ```hcl
+    locals {
+        repo_names = ["retail-app"]
+    }
+    ...
+    module "app_infra_cloudbuild_project" {
+        source = "../../modules/single_project"
+        ...
+        business_code     = "ret"
+        primary_contact   = "example@example.com"
+        ...
+    }
+    ```
+
+1. Change the base_env module to get terraform remote state folder path (e.g. retail/development).
+1. This folder path should be used to get the terraform state folder that contains data needed to create network resources.
+
+    Example:
+
+    4-projects/modules/base_env/variables.tf
+
+    ```hcl
+    variable "env_state_folder" {
+        description = "Path to remote state"
+        type        = string
+        default     = ""
+    }
+    ```
+
+    4-projects/modules/base_env/main.tf
+
+    ```hcl
+    ...
+    data "terraform_remote_state" "network_env" {
+        backend = "gcs"
+
+        config = {
+            bucket = var.remote_state_bucket
+            prefix = "terraform/networks/${var.env_state_folder}"
+        }
+    }
+
+    data "terraform_remote_state" "environments_env" {
+        backend = "gcs"
+
+        config = {
+            bucket = var.remote_state_bucket
+            # Folder path to terraform remote state
+            prefix = "terraform/environments/${var.env_state_folder}"
+        }
+    }
+    ...
+    ```
+
+1. Change backend gcs prefix for each environment and business unit.
+
+    Example:
+
+    4-projects/finance/retail/backend.tf
+
+    ```hcl
+    ...
+    terraform {
+        backend "gcs" {
+            bucket = "<YOUR_PROJECTS_BACKEND_STATE_BUCKET>"
+            prefix = "terraform/projects/retail/development"
+        }
+    }
+    ```
+
+1. Review tfvars files symbolic links and modules source paths, as you added more folders in hierarchy it my change those paths.
+1. Set new env_state_folder parameter on base_env calls.
+
+    Example:
+
+    4-projects/retail/development/main.tf
+
+    ```hcl
+    ...
+    module "env" {
+        source = "../../modules/base_env"
+
+        env              = "development"
+        business_code    = "ret"
+        business_unit    = "retail"
+        env_state_folder = "retail/development"
         ...
     }
     ```
