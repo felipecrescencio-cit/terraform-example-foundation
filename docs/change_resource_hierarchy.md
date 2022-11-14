@@ -12,19 +12,19 @@ The current deployment scenario of Terraform Foundation Example blueprint consid
 | non-production | Environment folder that contains a replica of the production environment to let you test workloads before you put them into production. |
 | development | Environment folder that is used as a development and sandbox environment. |
 
-This document covers two additional scenarios:
+This document covers two additional scenarios to suit different organization structures:
 
-- Environment folders as root of folders hierarchy
-- Environment folders as leaf of folders hierarchy
+- **Environment folders as root of folders hierarchy:** This scenario can have two or more levels of folders, with a focus on environment-centric policies: `environments -> ... -> business units`
+- **Environment folders as leaf of folders hierarchy:** This scenario divides your organization into two or more levels of folders with a focus on autonomous business units: `business units -> ... -> environments`
 
-Option 1
+Table Option 1
 
 | Current Scenario | Environment folders as root | Environment folders as leaf |
 | --- | --- | --- |
 | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── <b>fldr-development *</b><br>├── <b>fldr-non-production *</b><br>└── <b>fldr-production *</b><br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── <b>fldr-development *</b><br>│   ├── finance<br>│   └── retail<br>├── <b>fldr-non-production *</b><br>│   ├── finance<br>│   └── retail<br>└── <b>fldr-production *</b><br>    ├── finance<br>    └── retail<br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── finance<br>│   ├── <b>fldr-development *</b><br>│   ├── <b>fldr-non-production *</b><br>│   └── <b>fldr-production *</b><br>└── retail<br>    ├── <b>fldr-development *</b><br>    ├── <b>fldr-non-production *</b><br>    └── <b>fldr-production *</b></pre> |
 
 
-Option 2
+Table Option 2 - html
 
 <table>
 <thead>
