@@ -97,91 +97,116 @@ Review the `tf-wrapper.sh`. It is a bash script helper responsible for applying 
     # Create maxdepth variable
     maxdepth=2  #🟢 Must be configured base in your directory design
 
+    #🟢 Create component temp variables
+    current_component=""
+    old_component=""
+
     ## Terraform apply for single environment.
     tf_apply() {
     ...
     ```
 
-1. Change find commands to use maxdepth variable on all terraform commands. Make sure you do the same changes in functions: tf_plan_validate_all and single_action_runner.
+1. Change find commands to use maxdepth variable on all terraform commands. Make sure you do the same changes in functions: `tf_plan_validate_all` and `single_action_runner`.
 
-    ```bash
+    ```text
     tf_plan_validate_all() {
     local env
     ...
-    # Set maxdepth in find command
+    #🟢 Set maxdepth in find command -------------- 🟢
     find "$component_path" -mindepth 1 -maxdepth $maxdepth -type d | while read -r env_path ; do
         env="$(basename "$env_path")"
     ```
 
-1. Add validation to check your new folder hierarchy and find terraform config files.
+1. Add handling component variable and call to new function `check_env_path_folder`.
 
-    ```bash
-     if [[ "$env" =~ $environments_regex ]] ; then
-       local component_tf_arg
-       # Additional validation to get source folder hierarchy and find terraform configs
-       if [[ "$env_path" =~ ^($base_dir)/($component)/(.+)/$env ]] ; then
+    ```text
+    ...
+    env="$(basename "$env_path")"
+
+    old_component=$component #🟢 Holds component value before call check_env_path_folder
+
+    #🟢 Calls check_env_path_folder to get fixed component value
+    check_env_path_folder "$env_path" "$base_dir" "$component" "$env"
+
+    component=$current_component #🟢 Get fixed component value
+    ...
+    if [[ "$env" =~ $environments_regex ]] ; then
     ```
 
-1. Set a new component name to be used as terraform plan json filenames and set it as terraform commands parameters.
+1. Fix warning message for doesn't match directories.
 
-    ```bash
-           # Set a new component name to be used as terraform plan json file names
-           component_tf_arg=$(echo ${BASH_REMATCH[3]} | sed -r 's/\//__/g')
-       else
-           component_tf_arg=$component
-       fi
+    ```text
+        ...
+        tf_plan "$env_path" "$env" "$component"
+        tf_validate "$env_path" "$env" "$policysource" "$component"
+      else
+        #🟢 Replace dash (-) for slash (/) in component to fix warning message
+        echo "$(echo ${component} | sed -r 's/-/\//g' )/$env doesn't match $environments_regex; skipping"
+      fi
 
-       # Set new component name as terraform commands parameters
-       tf_init "$env_path" "$env" "$component_tf_arg"
-       tf_plan "$env_path" "$env" "$component_tf_arg"
-       tf_validate "$env_path" "$env" "$policysource" "$component_tf_arg"
+      component=$old_component #🟢 Assign old component value before next while-loop iteration
+    done
     ```
 
-1. Do the same changes in single_action_runner function.
+1. Do the same changes in `single_action_runner` function.
 
-    ```bash
+    ```text
     single_action_runner() {
     local env
     ...
-    # Set maxdepth in find command
+    #🟢 Set maxdepth in find command -------------- 🟢
     find "$component_path" -mindepth 1 -maxdepth $maxdepth -type d | sort -r | while read -r env_path ; do
         env="$(basename "$env_path")"
-        local component_tf_arg
 
-        # Additional validation to get source folder hierarchy and find terraform configs
-        if [[ "$env_path" =~ ^($base_dir)/($component)/(.+)/$env ]] ; then
+        old_component=$component #🟢 Holds component value before call check_env_path_folder
 
-            # Set a new component name to be used as terraform plan json file names
-            component_tf_arg=$(echo ${BASH_REMATCH[3]} | sed -r 's/\//__/g')
-        else
-            component_tf_arg=$component
-        fi
-        ...
-        case "$action" in
-            apply )
-            # Set new component name as terraform commands parameters
-            tf_apply "$env_path" "$env" "$component_tf_arg"
-            ;;
+        #🟢 Calls check_env_path_folder to get fixed component value
+        check_env_path_folder "$env_path" "$base_dir" "$component" "$env"
 
-            init )
-            # Set new component name as terraform commands parameters
-            tf_init "$env_path" "$env" "$component_tf_arg"
-            ;;
+        component=$current_component #🟢 Get fixed component value
+    ...
+    ```
 
-            plan )
-            # Set new component name as terraform commands parameters
-            tf_plan "$env_path" "$env" "$component_tf_arg"
-            ;;
+1. Fix warning message for doesn't match directories.
 
-            show )
-            # Set new component name as terraform commands parameters
-            tf_show "$env_path" "$env" "$component_tf_arg"
-            ;;
+    ```text
+        esac
+      else
+        #🟢 Replace dash (-) for slash (/) in component to fix warning message
+        echo "$(echo ${component} | sed -r 's/-/\//g' )/${env} doesn't match ${branch}; skipping"
+      fi
 
-            validate )
-            # Set new component name as terraform commands parameters
-            tf_validate "$env_path" "$env" "$policysource" "$component_tf_arg"
-            ;;
+      component=$old_component #🟢 Assign old component value before next while-loop iteration
+    done
+    ```
+
+1. Create new function `check_env_path_folder`.
+
+    ```text
+    ...
+    #🟢 New check_env_path_folder function
+
+    ## Fix component name to be different for each environment. It is used as tf-plan file name
+    check_env_path_folder() {
+    local lenv_path=$1
+    local lbase_dir=$2
+    local lcomponent=$3
+    local lenv=$4
+
+    if [[ "$lenv_path" =~ ^($lbase_dir)/(.+)/$lenv ]] ; then
+        # The ${BASH_REMATCH[2]} means the second group in regex expression
+        # This group are the folders between base dir and env
+        # This value garantees that tf-plan file name will be unique for each environment
+        current_component=$(echo ${BASH_REMATCH[2]} | sed -r 's/\//-/g')
+    else
+        current_component=$lcomponent
+    fi
+    }
+
+    #🟢 End of New check_env_path_folder function
+
+    case "$action" in
+    init|plan|apply|show|validate )
     ...
     ```
 
