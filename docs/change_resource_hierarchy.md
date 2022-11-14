@@ -14,7 +14,7 @@ The current deployment scenario of Terraform Foundation Example blueprint consid
 
 This document covers two additional scenarios to suit different organization structures:
 
-- **Environment folders as root of folders hierarchy:** This scenario can have two or more levels of folders, with a focus on environment-centric policies: `environments -> ... -> business units`
+- **Environment folders as root of folders hierarchy:** This scenario can have two or more levels of folders, with an environment-centric focus: `environments -> ... -> business units`
 - **Environment folders as leaf of folders hierarchy:** This scenario divides your organization into two or more levels of folders with a focus on autonomous business units: `business units -> ... -> environments`
 
 Table Option 1
