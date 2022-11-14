@@ -1,13 +1,27 @@
 # Guidance for modifications of resource hierarchy
 
-Explains the instructions to change resource hierarchy during Terraform Foundation Example blueprint deployment.
+This guide explains the instructions to change resource hierarchy during Terraform Foundation Example blueprint deployment.
 
-The current deployment scenario of Terraform Foundation Example blueprint considers a flat resource hierarchy having one folder for each environment.
+The current deployment scenario of Terraform Foundation Example blueprint considers a flat resource hierarchy (bootstrap, common, ...) having one folder for each environment.
 
 This document covers two additional scenarios:
 
 - Environment folders as root of folders hierarchy
 - Environment folders as leaf of folders hierarchy
+
+| Current Scenario | Environment folders as root | Environment folders as leaf |
+| --- | --- | --- |
+| <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── fldr-development *<br>├── fldr-non-production *<br>└── fldr-production *<br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── fldr-development *<br>│   ├── finance<br>│   └── retail<br>├── fldr-non-production *<br>│   ├── finance<br>│   └── retail<br>└── fldr-production *<br>    ├── finance<br>    └── retail<br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── finance<br>│   ├── fldr-development *<br>│   ├── fldr-non-production *<br>│   └── fldr-production *<br>└── retail<br>    ├── <b>fldr-development *<br>    ├── fldr-non-production *<br>    └── fldr-production *</pre> |
+
+
+
+
+
+example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── finance<br>│   ├── fldr-development *<br>│   ├── fldr-non-production *<br>│   └── fldr-production *<br>└── retail<br>    ├── <b>fldr-development *<br>    ├── fldr-non-production *<br>    └── fldr-production *
+
+
+
+
 
 <table>
 <thead>
@@ -72,13 +86,13 @@ Review tf-wrapper.sh.
 
 1. Create a new variable maxdepth to set how many source folder levels should be searched for terraform configurations.
 
-    ```bash
+    ```text
     ...
-    tmp_plan="${base_dir}/tmp_plan" #if you change this, update build triggers
+    tmp_plan="${base_dir}/tmp_plan"
     environments_regex="^(development|non-production|production|shared)$"
 
     # Create maxdepth variable
-    maxdepth=2  #<- Must be configured base in your directory design
+    maxdepth=2  #🟢 Must be configured base in your directory design
 
     ## Terraform apply for single environment.
     tf_apply() {
