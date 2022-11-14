@@ -239,7 +239,7 @@ example-organization/
 
     2-environments/envs/development/main.tf
 
-    ```hcl
+    ```text
     module "env" {
         source = "../../modules/env_baseline"
 
@@ -247,7 +247,7 @@ example-organization/
         ...
     }
 
-    /* Folder hierarchy creation */
+    /* 🟢 Folder hierarchy creation */
     resource "google_folder" "finance" {
         display_name = "finance"
         parent       = module.env.env_folder
@@ -285,7 +285,7 @@ example-organization/
 
     2-environments/envs/development/outputs.tf
 
-    ```hcl
+    ```text
     ...
     /* Folder hierarchy output */
     output "folder_hierarchy" {
@@ -305,7 +305,7 @@ example-organization/
 
     4-projects/modules/base_env/variables.tf
 
-    ```hcl
+    ```text
     ...
     variable "folder_hierarchy_key" {
         description = "Key of the folder hierarchy map to get the folder where projects should be created."
@@ -317,7 +317,7 @@ example-organization/
 
     4-projects/modules/base_env/main.tf
 
-    ```hcl
+    ```text
     locals {
         ...
         env_folder_name = lookup(
@@ -336,7 +336,7 @@ example-organization/
 
     4-projects/finance/shared/backend.tf
 
-    ```hcl
+    ```text
     ...
     terraform {
         backend "gcs" {
@@ -351,7 +351,7 @@ example-organization/
 
     4-projects/finance/shared/example_infra_pipeline.tf
 
-    ```hcl
+    ```text
     locals {
         repo_names = ["finance-app"]
     }
@@ -371,7 +371,7 @@ example-organization/
 
     4-projects/finance/development/backend.tf
 
-    ```hcl
+    ```text
     ...
     terraform {
         backend "gcs" {
@@ -388,7 +388,7 @@ example-organization/
 
     4-projects/finance/development/main.tf
 
-    ```hcl
+    ```text
     module "env" {
         source = "../../modules/base_env"
 
