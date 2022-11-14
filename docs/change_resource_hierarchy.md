@@ -2,26 +2,29 @@
 
 This guide explains the instructions to change resource hierarchy during Terraform Foundation Example blueprint deployment.
 
-The current deployment scenario of Terraform Foundation Example blueprint considers a flat resource hierarchy (bootstrap, common, ...) having one folder for each environment.
+The current deployment scenario of Terraform Foundation Example blueprint considers a flat resource hierarchy where all folders are at same level and having one folder for each environment. Here is a detailed explanation of each folder:
+
+| Folder | Description |
+| --- | --- |
+| bootstrap | Contains the seed and CI/CD projects that are used to deploy foundation components. |
+| common | Contains projects with cloud resources used by the organization. |
+| production | Environment folder that contains projects with cloud resources that have been promoted into production. |
+| non-production | Environment folder that contains a replica of the production environment to let you test workloads before you put them into production. |
+| development | Environment folder that is used as a development and sandbox environment. |
 
 This document covers two additional scenarios:
 
 - Environment folders as root of folders hierarchy
 - Environment folders as leaf of folders hierarchy
 
+Option 1
+
 | Current Scenario | Environment folders as root | Environment folders as leaf |
 | --- | --- | --- |
-| <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── fldr-development *<br>├── fldr-non-production *<br>└── fldr-production *<br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── fldr-development *<br>│   ├── finance<br>│   └── retail<br>├── fldr-non-production *<br>│   ├── finance<br>│   └── retail<br>└── fldr-production *<br>    ├── finance<br>    └── retail<br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── finance<br>│   ├── fldr-development *<br>│   ├── fldr-non-production *<br>│   └── fldr-production *<br>└── retail<br>    ├── <b>fldr-development *<br>    ├── fldr-non-production *<br>    └── fldr-production *</pre> |
+| <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── <b>fldr-development *</b><br>├── <b>fldr-non-production *</b><br>└── <b>fldr-production *</b><br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── <b>fldr-development *</b><br>│   ├── finance<br>│   └── retail<br>├── <b>fldr-non-production *</b><br>│   ├── finance<br>│   └── retail<br>└── <b>fldr-production *</b><br>    ├── finance<br>    └── retail<br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── finance<br>│   ├── <b>fldr-development *</b><br>│   ├── <b>fldr-non-production *</b><br>│   └── <b>fldr-production *</b><br>└── retail<br>    ├── <b>fldr-development *</b><br>    ├── <b>fldr-non-production *</b><br>    └── <b>fldr-production *</b></pre> |
 
 
-
-
-
-example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── finance<br>│   ├── fldr-development *<br>│   ├── fldr-non-production *<br>│   └── fldr-production *<br>└── retail<br>    ├── <b>fldr-development *<br>    ├── fldr-non-production *<br>    └── fldr-production *
-
-
-
-
+Option 2
 
 <table>
 <thead>
@@ -82,7 +85,7 @@ example-organization/<br>
 
 ### Build Files
 
-Review tf-wrapper.sh.
+Review the `tf-wrapper.sh`. It is a bash script helper responsible for applying  terraform configurations for Terraform Foundation Example blueprint. The `tf-wrapper.sh` script works based on the current branch (see [Branching strategy](../README.md#branching-strategy)) and searches for a folder in the source code where name matches the current branch name. When it finds a folder it applies the terraform configurations. These changes below will make `tf-wrapper.sh` capable of searching deeper for matching folders and complying with your source code folder hierarchy.
 
 1. Create a new variable maxdepth to set how many source folder levels should be searched for terraform configurations.
 
