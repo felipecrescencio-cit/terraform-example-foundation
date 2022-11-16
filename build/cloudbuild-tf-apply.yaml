@@ -73,4 +73,7 @@ artifacts:
     location: 'gs://${_ARTIFACT_BUCKET_NAME}/terraform/cloudbuild/apply/${BUILD_ID}'
     paths: ['cloudbuild-tf-apply.yaml', 'tmp_plan/*.tfplan']
 
+# Artifacts config is not able to copy tfplan files in subfolders - maybe we need to use a gs util command to do this way
+# https://cloud.google.com/build/docs/building/store-artifacts-in-cloud-storage#uploading_files_and_folders
+
 logsBucket: 'gs://${_LOG_BUCKET_NAME}'
