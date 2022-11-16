@@ -1,8 +1,8 @@
-# Guidance for modifications of resource hierarchy
+# Guidance for modifications of the resource hierarchy
 
 This guide explains the instructions to change resource hierarchy during Terraform Foundation Example blueprint deployment.
 
-The current deployment scenario of Terraform Foundation Example blueprint considers a flat resource hierarchy where all folders are at same level and having one folder for each environment. Here is a detailed explanation of each folder:
+The current deployment scenario of Terraform Foundation Example blueprint considers a flat resource hierarchy where all folders are at the same level and have one folder for each environment. Here is a detailed explanation of each folder:
 
 | Folder | Description |
 | --- | --- |
@@ -12,22 +12,17 @@ The current deployment scenario of Terraform Foundation Example blueprint consid
 | non-production | Environment folder that contains a replica of the production environment to let you test workloads before you put them into production. |
 | development | Environment folder that is used as a development and sandbox environment. |
 
-This document covers two additional scenarios to suit different organization structures:
+This document covers a scenario where you can have two or more levels of folders, with an environment-centric focus: `environments -> ... -> business units`.
 
-- **Environment folders as root of folders hierarchy:** This scenario can have two or more levels of folders, with an environment-centric focus: `environments -> ... -> business units`
-- **Environment folders as leaf of folders hierarchy:** This scenario divides your organization into two or more levels of folders with a focus on autonomous business units: `business units -> ... -> environments`
-
-| Current Scenario | Hierarchy Changed |
+| Current Hierarchy | Changed Hierarchy |
 | --- | --- |
-| <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── <b>fldr-development *</b><br>├── <b>fldr-non-production *</b><br>└── <b>fldr-production *</b><br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── <b>fldr-development *</b><br>│   ├── finance<br>│   └── retail<br>├── <b>fldr-non-production *</b><br>│   ├── finance<br>│   └── retail<br>└── <b>fldr-production *</b><br>    ├── finance<br>    └── retail<br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── finance<br>│   ├── <b>fldr-development *</b><br>│   ├── <b>fldr-non-production *</b><br>│   └── <b>fldr-production *</b><br>└── retail<br>    ├── <b>fldr-development *</b><br>    ├── <b>fldr-non-production *</b><br>    └── <b>fldr-production *</b></pre> |
+| <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── <b>fldr-development *</b><br>├── <b>fldr-non-production *</b><br>└── <b>fldr-production *</b><br></pre> | <pre>example-organization/<br>├── fldr-bootstrap<br>├── fldr-common<br>├── <b>fldr-development *</b><br>│   ├── finance<br>│   └── retail<br>├── <b>fldr-non-production *</b><br>│   ├── finance<br>│   └── retail<br>└── <b>fldr-production *</b><br>    ├── finance<br>    └── retail<br></pre> |
 
-## Code Changes - Both Scenarios
-
-### Build Files
+## Code Changes - Build Files
 
 Review the `tf-wrapper.sh`. It is a bash script helper responsible for applying  terraform configurations for Terraform Foundation Example blueprint. The `tf-wrapper.sh` script works based on the current branch (see [Branching strategy](../README.md#branching-strategy)) and searches for a folder in the source code where name matches the current branch name. When it finds a folder it applies the terraform configurations. These changes below will make `tf-wrapper.sh` capable of searching deeper for matching folders and complying with your source code folder hierarchy.
 
-1. Create a new variable maxdepth to set how many source folder levels should be searched for terraform configurations.
+1. Create a new variable `maxdepth` to set how many source folder levels should be searched for terraform configurations.
 
     ```text
     ...
@@ -35,7 +30,7 @@ Review the `tf-wrapper.sh`. It is a bash script helper responsible for applying 
     environments_regex="^(development|non-production|production|shared)$"
 
     # Create maxdepth variable
-    maxdepth=2  #🟢 Must be configured base in your directory design
+    maxdepth=2  #🟢 Must be configured based in your directory design
 
     #🟢 Create component temp variables
     current_component=""
@@ -120,7 +115,7 @@ Review the `tf-wrapper.sh`. It is a bash script helper responsible for applying 
     done
     ```
 
-1. Create new function `check_env_path_folder`.
+1. Create a new function `check_env_path_folder`.
 
     ```text
     ...
@@ -135,8 +130,8 @@ Review the `tf-wrapper.sh`. It is a bash script helper responsible for applying 
 
     if [[ "$lenv_path" =~ ^($lbase_dir)/(.+)/$lenv ]] ; then
         # The ${BASH_REMATCH[2]} means the second group in regex expression
-        # This group are the folders between base dir and env
-        # This value garantees that tf-plan file name will be unique for each environment
+        # This group is the folders between base dir and env
+        # This value guarantees that tf-plan file name will be unique for each environment
         current_component=$(echo ${BASH_REMATCH[2]} | sed -r 's/\//-/g')
     else
         current_component=$lcomponent
@@ -150,23 +145,24 @@ Review the `tf-wrapper.sh`. It is a bash script helper responsible for applying 
     ...
     ```
 
-## Code Changes - Hierarchy creation - Environments as Root
+## Code Changes - Terraform Files
 
-```text
+<pre>
 example-organization/
 ├── bootstrap
 ├── common
-├── development
+├── <b>development *</b>
 │   ├── finance
 │   └── retail
-├── non-production
+├── <b>non-production *</b>
 │   ├── finance
 │   └── retail
-└── production
+└── <b>production *</b>
     ├── finance
     └── retail
-```
-*Figure 1 - An example of environments as root folders*
+</pre>
+
+*Example 1 - An example of Terraform Foundation Example with hierarchy changed*
 
 ### Step 2-environments
 
@@ -196,9 +192,9 @@ example-organization/
     }
     ```
 
-1. Create an output with the flat representation of the new hierarchy in each environment. It will be used by next steps to host GCP projects.
+1. Create an output with a flat representation of the new hierarchy in each environment. It will be used in the next steps to host GCP projects.
 
-    *Table 1 - Example output for Figure 1 resource hierarchy*
+    *Table 1 - Example output for Example 1 resource hierarchy*
 
     | Folder Path | Folder Id |
     | --- | --- |
@@ -224,7 +220,7 @@ example-organization/
 
     ```text
     ...
-    /* Folder hierarchy output */
+    /* 🟢 Folder hierarchy output */
     output "folder_hierarchy" {
         value = {
         "development" = module.env.env_folder
@@ -236,7 +232,7 @@ example-organization/
 
 ### Step 4-projects
 
-1. Change the base_env module to receive the new folder key (e.g. development/retail) in hierarchy map from step 2-environments.
+1. Change the base_env module to receive the new folder key (e.g. development/retail) in the hierarchy map from step 2-environments.
 1. This folder key should be used to get the folder where projects should be created.
     Example:
 
@@ -244,6 +240,7 @@ example-organization/
 
     ```text
     ...
+    /* 🟢 Folder Key variable */
     variable "folder_hierarchy_key" {
         description = "Key of the folder hierarchy map to get the folder where projects should be created."
         type = string
@@ -257,6 +254,7 @@ example-organization/
     ```text
     locals {
         ...
+        /* 🟢 Get new folder */
         env_folder_name = lookup(
         data.terraform_remote_state.environments_env.outputs.folder_hierarchy, var.folder_hierarchy_key
         , data.terraform_remote_state.environments_env.outputs.env_folder)
@@ -265,8 +263,8 @@ example-organization/
     ...
     ```
 
-1. Create your folder hierarchy above environment folders (development, non-production, production). Remember to keep the environment folders as leaf in source code folder hierarchy because this is the way tf-wrapper.sh - that is the bash script helper - works to apply terraform configurations.
-1. For this example, just rename folder business_unit_1 and business_unit_2 to your Business Units names, i.e: finance and retail, to match example folder hierarchy.
+1. Create your folder hierarchy above environment folders (development, non-production, production). Remember to keep the environment folders as leaves (latest level) in the source code folder hierarchy because this is the way `tf-wrapper.sh` - that is the bash script helper - works to apply terraform configurations.
+1. For this example, just rename folders business_unit_1 and business_unit_2 to your Business Units names, i.e: finance and retail, to match the example folder hierarchy.
 1. Manually duplicate your source folder hierarchy to match your needs.
 1. Change backend gcs prefix for each business unit shared resources.
     Example:
@@ -278,6 +276,8 @@ example-organization/
     terraform {
         backend "gcs" {
             bucket = "<YOUR_PROJECTS_BACKEND_STATE_BUCKET>"
+
+            /* 🟢 Review prefix path */
             prefix = "terraform/projects/finance/shared"
         }
     }
@@ -290,15 +290,20 @@ example-organization/
 
     ```text
     locals {
+        /* 🟢 Review locals */
         repo_names = ["finance-app"]
     }
     ...
 
     module "app_infra_cloudbuild_project" {
+
+        /* 🟢 Review module path */
         source = "../../modules/single_project"
         ...
         primary_contact   = "example@example.com"
         secondary_contact = "example2@example.com"
+
+        /* 🟢 Review business code */
         business_code     = "fin"
     }
     ```
@@ -313,12 +318,14 @@ example-organization/
     terraform {
         backend "gcs" {
             bucket = "<YOUR_PROJECTS_BACKEND_STATE_BUCKET>"
+
+            /* 🟢 Review prefix path */
             prefix = "terraform/projects/finance/development"
         }
     }
     ```
 
-1. Review business_code and business_unit to match your new business units names.
+1. Review business_code and business_unit to match your new business unit names.
 1. Set new folder_hierarchy_key parameter on base_env calls.
 
     Example:
@@ -327,11 +334,16 @@ example-organization/
 
     ```text
     module "env" {
+        /* 🟢 Review module path */
         source = "../../modules/base_env"
 
         env                  = "development"
+
+        /* 🟢 Review business code */
         business_code        = "fin"
         business_unit        = "finance"
+
+        /* 🟢 Set folder key parameter */
         folder_hierarchy_key = "development/finance"
         ...
     }
